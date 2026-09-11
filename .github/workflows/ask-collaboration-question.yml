@@ -1,0 +1,19 @@
+name: Ask collaboration question
+
+on:
+  workflow_dispatch:
+
+permissions:
+  discussions: write
+
+jobs:
+  ask:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Open a Q&A discussion as the workflow bot
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          repo_id=$(gh api "repos/${GITHUB_REPOSITORY}" --jq .node_id)
+          category_id=$(gh api graphql -f query='query($owner:String!,$name:String!){repository(owner:$owner,name:$name){discussionCategories(first:20){nodes{id isAnswerable}}}}' -f owner="${GITHUB_REPOSITORY_OWNER}" -f name="${GITHUB_REPOSITORY#*/}" --jq '.data.repository.discussionCategories.nodes[] | select(.isAnswerable) | .id' | head -n 1)
+          gh api graphql -f query='mutation($repo:ID!,$category:ID!,$title:String!,$body:String!){createDiscussion(input:{repositoryId:$repo,categoryId:$category,title:$title,body:$body}){discussion{url}}}' -f repo="$repo_id" -f category="$category_id" -f title='What evidence should verify an achievement workflow?' -f body='Propose a concise verification policy that keeps this lab transparent, scoped to its own repository, and free of unsolicited activity.' --jq .data.createDiscussion.discussion.url
