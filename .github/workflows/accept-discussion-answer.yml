@@ -1,0 +1,23 @@
+name: Accept discussion answer
+
+on:
+  workflow_dispatch:
+    inputs:
+      answer_id:
+        description: GraphQL node ID of the answer to accept
+        required: true
+        type: string
+
+permissions:
+  discussions: write
+
+jobs:
+  accept:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Accept the selected answer as the workflow bot
+        env:
+          GH_TOKEN: ${{ github.token }}
+          ANSWER_ID: ${{ inputs.answer_id }}
+        run: |
+          gh api graphql -f query='mutation($id:ID!){markDiscussionCommentAsAnswer(input:{id:$id}){discussion{url}}}' -f id="$ANSWER_ID" --jq .data.markDiscussionCommentAsAnswer.discussion.url
